@@ -1,8 +1,7 @@
 import torch
 
 def tokenize_prompt_and_output(prompt_strs, output_strs, tokenizer):
-    input_ids_list = []
-    labels_list = []
+    full_ids_list = []
     masks_list = []
 
     for prompt, output in zip(prompt_strs, output_strs):
@@ -11,25 +10,26 @@ def tokenize_prompt_and_output(prompt_strs, output_strs, tokenizer):
 
         full_ids = prompt_ids + output_ids
 
-        input_ids = full_ids[:-1]
-        labels = full_ids[1:]
-
-        # mask: 0 for prompt, 1 for output
+        # mask: 0 for prompt, 1 for output (aligned with input_ids = full_ids[:-1])
         response_mask = [0]*(len(prompt_ids)-1) + [1]*len(output_ids)
 
-        input_ids_list.append(input_ids)
-        labels_list.append(labels)
+        full_ids_list.append(full_ids)
         masks_list.append(response_mask)
 
-    # padding
-    max_len = max(len(x) for x in input_ids_list)
+    # Pad full_ids to max length, then slice to get input_ids and labels
+    max_full_len = max(len(x) for x in full_ids_list)
 
-    def pad(seq, pad_value):
-        return seq + [pad_value]*(max_len - len(seq))
+    def pad_full(seq):
+        return seq + [tokenizer.pad_token_id] * (max_full_len - len(seq))
 
-    input_ids = torch.tensor([pad(x, tokenizer.pad_token_id) for x in input_ids_list])
-    labels = torch.tensor([pad(x, -100) for x in labels_list])
-    response_mask = torch.tensor([pad(x, 0) for x in masks_list])
+    def pad_mask(seq):
+        return seq + [0] * (max_full_len - 1 - len(seq))
+
+    padded_full = [pad_full(x) for x in full_ids_list]
+
+    input_ids = torch.tensor([x[:-1] for x in padded_full])
+    labels = torch.tensor([x[1:] for x in padded_full])
+    response_mask = torch.tensor([pad_mask(x) for x in masks_list], dtype=torch.bool)
 
     return {
         "input_ids": input_ids,
