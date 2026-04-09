@@ -179,14 +179,13 @@ def train(args):
     model.gradient_checkpointing_enable()
     model.train()
 
-    try:
-        import bitsandbytes as bnb
-        optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-        logger.info("Using 8-bit AdamW (bitsandbytes)")
-    except ImportError:
-        from torch.optim import AdamW
+    from torch.optim import AdamW, SGD
+    if args.use_sgd:
+        optimizer = SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, momentum=0.9)
+        logger.info("Using SGD with momentum")
+    else:
         optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-        logger.info("bitsandbytes not found, using fp32 AdamW")
+        logger.info("Using fp32 AdamW")
 
     # --- training ---
     global_step = 0
@@ -258,11 +257,10 @@ def train(args):
         ).to(args.device)
         model.gradient_checkpointing_enable()
         model.train()
-        try:
-            import bitsandbytes as bnb
-            optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-        except ImportError:
-            from torch.optim import AdamW
+        from torch.optim import AdamW, SGD
+        if args.use_sgd:
+            optimizer = SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, momentum=0.9)
+        else:
             optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     wandb.finish()
@@ -301,6 +299,8 @@ def parse_args():
                    help="Number of val examples to evaluate (None = all)")
     p.add_argument("--log-every",    type=int,   default=50)
     p.add_argument("--seed",         type=int,   default=42)
+    p.add_argument("--use-sgd",      action="store_true",
+                   help="Use SGD instead of AdamW to reduce memory (no 2nd moment)")
     # wandb
     p.add_argument("--wandb-project", default="sft-math")
     return p.parse_args()
