@@ -95,7 +95,7 @@ def evaluate_accuracy(
     answers = [str(ex.get("answer", ex.get("solution", ""))) for ex in val_data]
 
     from vllm import LLM, SamplingParams
-    llm = LLM(model=model_path, trust_remote_code=True)
+    llm = LLM(model=model_path, trust_remote_code=True, gpu_memory_utilization=0.5)
     sampling_params = SamplingParams(
         temperature=0.0,
         top_p=1.0,
@@ -198,10 +198,11 @@ def train(args):
             labels = batch["labels"].to(args.device)
             response_mask = batch["response_mask"].to(args.device)
 
-            # get log-probs
+            # get log-probs (free logits immediately to save memory)
             logits = model(input_ids=input_ids).logits
             log_probs_all = torch.log_softmax(logits, dim=-1)
             log_probs = log_probs_all.gather(-1, labels.unsqueeze(-1)).squeeze(-1)
+            del logits, log_probs_all
 
             loss, _ = sft_microbatch_train_step(
                 policy_log_probs=log_probs,
@@ -223,10 +224,12 @@ def train(args):
 
         # --- validation at end of each epoch ---
         logger.info("Running validation after epoch %d ...", epoch + 1)
-        # save checkpoint for vllm
+        # save checkpoint for vllm; free training model first to avoid OOM
         ckpt_dir = Path(args.output_dir) / f"epoch_{epoch + 1}"
         model.save_pretrained(ckpt_dir)
         tokenizer.save_pretrained(ckpt_dir)
+        del model
+        torch.cuda.empty_cache()
 
         val_acc = evaluate_accuracy(
             model_path=str(ckpt_dir),
