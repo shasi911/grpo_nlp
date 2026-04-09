@@ -11,7 +11,7 @@ Usage examples:
   # Train on filtered (correct-answer-only) dataset
   python scripts/run_sft.py --filtered --num-examples full
 """
-
+import torch
 import argparse
 import json
 import logging
@@ -95,6 +95,7 @@ def evaluate_accuracy(
     ]
     answers = [str(ex.get("answer", ex.get("solution", ""))) for ex in val_data]
 
+    import torch
     from vllm import LLM, SamplingParams
     llm = LLM(model=model_path, trust_remote_code=True, gpu_memory_utilization=0.5)
     sampling_params = SamplingParams(
