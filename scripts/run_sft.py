@@ -17,17 +17,13 @@ import json
 import logging
 import os
 import random
+import sys
 from pathlib import Path
 
-import torch
-import wandb
-from torch.optim import AdamW
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from vllm import LLM, SamplingParams
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from alignment.tokenizer_prompt_and_output import tokenize_prompt_and_output
-from alignment.sft_microbatch_train_step import sft_microbatch_train_step
-from alignment.drgrpo_grader import r1_zero_reward_fn, extract_answer, grade
+# Heavy deps (torch, wandb, vllm, transformers) are imported inside train()
+# so that --help works without a GPU environment.
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -50,6 +46,7 @@ def load_sft_data(path: str) -> list[dict]:
 
 def filter_correct_examples(data: list[dict]) -> list[dict]:
     """Keep only examples where the response contains a correct answer."""
+    from alignment.drgrpo_grader import r1_zero_reward_fn  # needs math deps on remote
     filtered = []
     for ex in data:
         response = ex.get("response", ex.get("output", ""))
@@ -97,6 +94,7 @@ def evaluate_accuracy(
     ]
     answers = [str(ex.get("answer", ex.get("solution", ""))) for ex in val_data]
 
+    from vllm import LLM, SamplingParams
     llm = LLM(model=model_path, trust_remote_code=True)
     sampling_params = SamplingParams(
         temperature=0.0,
@@ -107,6 +105,7 @@ def evaluate_accuracy(
     )
     outputs = llm.generate(prompts, sampling_params)
 
+    from alignment.drgrpo_grader import r1_zero_reward_fn  # needs math deps on remote
     correct = 0
     for output, gold in zip(outputs, answers):
         gen = output.outputs[0].text
@@ -125,6 +124,14 @@ def evaluate_accuracy(
 # --------------------------------------------------------------------------- #
 
 def train(args):
+    import torch
+    import wandb
+    from torch.optim import AdamW
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from vllm import LLM, SamplingParams
+    from alignment.tokenizer_prompt_and_output import tokenize_prompt_and_output
+    from alignment.sft_microbatch_train_step import sft_microbatch_train_step
+
     random.seed(args.seed)
     torch.manual_seed(args.seed)
 

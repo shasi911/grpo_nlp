@@ -11,8 +11,11 @@ Usage:
 import argparse
 import json
 import logging
+import sys
+from pathlib import Path
 
-from alignment.drgrpo_grader import r1_zero_reward_fn
+# ensure project root is on the path when run as a script
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -21,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 def main(input_path: str, output_path: str) -> None:
+    from alignment.drgrpo_grader import r1_zero_reward_fn  # needs math deps on remote
+
     total, kept = 0, 0
 
     with open(input_path) as fin, open(output_path, "w") as fout:
