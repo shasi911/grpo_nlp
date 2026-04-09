@@ -19,6 +19,7 @@ import os
 import random
 import sys
 from pathlib import Path
+from torch.optim import SGD
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -257,11 +258,10 @@ def train(args):
         ).to(args.device)
         model.gradient_checkpointing_enable()
         model.train()
-        from torch.optim import AdamW, SGD
-        if args.use_sgd:
-            optimizer = SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, momentum=0.9)
-        else:
-            optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        # if args.use_sgd:
+        optimizer = SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, momentum=0.9)
+        # else:
+        #     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     wandb.finish()
     logger.info("Training complete.")
