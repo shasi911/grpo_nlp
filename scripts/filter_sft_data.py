@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def main(input_path: str, output_path: str) -> None:
-    from alignment.drgrpo_grader import r1_zero_reward_fn  # needs math deps on remote
+    from alignment.drgrpo_grader import extract_boxed_answer  # needs math deps on remote
 
     total, kept = 0, 0
 
@@ -34,12 +34,21 @@ def main(input_path: str, output_path: str) -> None:
             total += 1
 
             response = ex.get("response", ex.get("output", ""))
-            ground_truth = str(ex.get("answer", ex.get("solution", "")))
 
-            result = r1_zero_reward_fn(response, ground_truth)
-            if result["answer_reward"] == 1.0:
-                fout.write(json.dumps(ex) + "\n")
-                kept += 1
+            # Check 1: proper </think> <answer>...</answer> format
+            if "</think> <answer>" not in response or "</answer>" not in response:
+                continue
+
+            # Check 2: <answer> section contains a parseable \boxed{} expression
+            answer_section = response.split("<answer>")[-1].replace("</answer>", "")
+            if "\\boxed" not in answer_section:
+                continue
+            extracted = extract_boxed_answer(answer_section)
+            if extracted is None:
+                continue
+
+            fout.write(json.dumps(ex) + "\n")
+            kept += 1
 
     logger.info(
         "Filtered dataset: %d / %d examples kept (%.1f%%)",
