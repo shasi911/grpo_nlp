@@ -282,7 +282,7 @@ def parse_args():
     p.add_argument("--batch-size",   type=int,   default=16,
                    help="Effective batch size (gradient accumulation applied)")
     p.add_argument("--micro-batch-size", type=int, default=1)
-    p.add_argument("--max-seq-len",  type=int,   default=512,
+    p.add_argument("--max-seq-len",  type=int,   default=256,
                    help="Truncate sequences to this length to avoid OOM")
     p.add_argument("--num-epochs",   type=int,   default=3)
     p.add_argument("--max-grad-norm",type=float, default=1.0)
