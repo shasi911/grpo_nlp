@@ -124,6 +124,8 @@ def evaluate_accuracy(
 # --------------------------------------------------------------------------- #
 
 def train(args):
+    import os
+    os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     import torch
     import wandb
     from torch.optim import AdamW
@@ -175,6 +177,7 @@ def train(args):
         torch_dtype=torch.bfloat16,
         trust_remote_code=True,
     ).to(args.device)
+    model.gradient_checkpointing_enable()
     model.train()
 
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -194,9 +197,10 @@ def train(args):
                 output_strs=[response],
                 tokenizer=tokenizer,
             )
-            input_ids = batch["input_ids"].to(args.device)
-            labels = batch["labels"].to(args.device)
-            response_mask = batch["response_mask"].to(args.device)
+            # truncate to max_seq_len to avoid OOM on long responses
+            input_ids = batch["input_ids"][:, :args.max_seq_len].to(args.device)
+            labels = batch["labels"][:, :args.max_seq_len].to(args.device)
+            response_mask = batch["response_mask"][:, :args.max_seq_len].to(args.device)
 
             # get log-probs (free logits immediately to save memory)
             logits = model(input_ids=input_ids).logits
@@ -246,6 +250,7 @@ def train(args):
             torch_dtype=torch.bfloat16,
             trust_remote_code=True,
         ).to(args.device)
+        model.gradient_checkpointing_enable()
         model.train()
         optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
@@ -277,6 +282,8 @@ def parse_args():
     p.add_argument("--batch-size",   type=int,   default=16,
                    help="Effective batch size (gradient accumulation applied)")
     p.add_argument("--micro-batch-size", type=int, default=1)
+    p.add_argument("--max-seq-len",  type=int,   default=1024,
+                   help="Truncate sequences to this length to avoid OOM")
     p.add_argument("--num-epochs",   type=int,   default=3)
     p.add_argument("--max-grad-norm",type=float, default=1.0)
     p.add_argument("--num-val-examples", type=int, default=200,
