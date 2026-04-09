@@ -128,7 +128,6 @@ def train(args):
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     import torch
     import wandb
-    from torch.optim import AdamW
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from vllm import LLM, SamplingParams
     from alignment.tokenizer_prompt_and_output import tokenize_prompt_and_output
@@ -180,7 +179,14 @@ def train(args):
     model.gradient_checkpointing_enable()
     model.train()
 
-    optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    try:
+        import bitsandbytes as bnb
+        optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        logger.info("Using 8-bit AdamW (bitsandbytes)")
+    except ImportError:
+        from torch.optim import AdamW
+        optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        logger.info("bitsandbytes not found, using fp32 AdamW")
 
     # --- training ---
     global_step = 0
@@ -252,7 +258,12 @@ def train(args):
         ).to(args.device)
         model.gradient_checkpointing_enable()
         model.train()
-        optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        try:
+            import bitsandbytes as bnb
+            optimizer = bnb.optim.AdamW8bit(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        except ImportError:
+            from torch.optim import AdamW
+            optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     wandb.finish()
     logger.info("Training complete.")
