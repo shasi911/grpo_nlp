@@ -1,16 +1,4 @@
-"""
-SFT training script for Qwen/Qwen2.5-Math-1.5B on the MATH dataset.
 
-Usage examples:
-  # Train on 512 examples, log to wandb
-  python scripts/run_sft.py --num-examples 512 --lr 1e-5 --batch-size 8
-
-  # Train on full dataset
-  python scripts/run_sft.py --num-examples full --lr 2e-5 --batch-size 16
-
-  # Train on filtered (correct-answer-only) dataset
-  python scripts/run_sft.py --filtered --num-examples full
-"""
 import torch
 import argparse
 import json

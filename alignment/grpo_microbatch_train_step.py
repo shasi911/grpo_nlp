@@ -13,24 +13,7 @@ def grpo_microbatch_train_step(
     old_log_probs: torch.Tensor | None = None,
     cliprange: float | None = None,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
-    """Compute GRPO policy gradient loss, backprop, and return loss + metadata.
 
-    loss = masked_mean(per_token_loss, response_mask) / gradient_accumulation_steps
-
-    Args:
-        policy_log_probs: (batch_size, sequence_length)
-        response_mask: (batch_size, sequence_length)
-        gradient_accumulation_steps: int
-        loss_type: "no_baseline" | "reinforce_with_baseline" | "grpo_clip"
-        raw_rewards: (batch_size, 1) — required for "no_baseline"
-        advantages: (batch_size, 1) — required for "reinforce_with_baseline" / "grpo_clip"
-        old_log_probs: (batch_size, sequence_length) — required for "grpo_clip"
-        cliprange: float — required for "grpo_clip"
-
-    Returns:
-        loss: scalar tensor (detached)
-        metadata: dict from the underlying loss function
-    """
     per_token_loss, metadata = compute_policy_gradient_loss(
         policy_log_probs=policy_log_probs,
         loss_type=loss_type,

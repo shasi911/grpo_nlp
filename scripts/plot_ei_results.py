@@ -1,10 +1,4 @@
-"""
-Plot EI validation accuracy and entropy curves from metrics.jsonl files.
 
-Usage:
-  python scripts/plot_ei_results.py --output-dirs outputs/ei_G4_db1024_ep1 outputs/ei_G8_db1024_ep1
-  python scripts/plot_ei_results.py  # auto-discovers all outputs/ei_* dirs
-"""
 
 import argparse
 import json

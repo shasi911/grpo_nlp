@@ -13,21 +13,7 @@ def log_generations(
     log_file: str | None = None,
     num_examples: int = 4,
 ) -> None:
-    """Log model generations along with their rewards.
 
-    Prints a sample of generations to the Python logger and optionally
-    appends all examples to a JSONL file.
-
-    Args:
-        prompts: The input prompt strings fed to the model.
-        generations: The model-generated response strings.
-        rewards: List of reward dicts (keys: "reward", "format_reward",
-                 "answer_reward") for each generation.
-        step: Current training step, used for console logging.
-        log_file: Optional path to a JSONL file. Each call appends one
-                  record per generation.
-        num_examples: Number of examples to print to the logger.
-    """
     # --- console logging (sample) ---
     logger.info("=== Generations at step %d ===", step)
     for i, (prompt, gen, rew) in enumerate(zip(prompts, generations, rewards)):

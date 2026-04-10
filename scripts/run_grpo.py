@@ -1,17 +1,4 @@
-"""
-GRPO training loop for Qwen/Qwen2.5-Math-1.5B on the MATH dataset.
 
-Algorithm per step:
-  1. Sample n_prompts questions from train
-  2. Generate G rollouts per question with vLLM
-  3. Compute rewards → group-normalize to get advantages
-  4. Load HF model; compute old_log_probs (for grpo_clip) and train
-  5. Save updated checkpoint; periodically evaluate
-
-Usage:
-  python scripts/run_grpo.py --n-steps 100 --rollouts 8 --n-prompts 32
-  python scripts/run_grpo.py --loss-type grpo_clip --cliprange 0.2
-"""
 
 import argparse
 import json

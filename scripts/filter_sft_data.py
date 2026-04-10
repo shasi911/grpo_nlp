@@ -1,13 +1,4 @@
-"""
-Filter sft.jsonl to keep only examples where the model's response
-contains the correct answer, verified against the MATH ground truth.
 
-Usage:
-  python scripts/filter_sft_data.py \
-      --input-path data/sft.jsonl \
-      --math-train-path data/MATH/train.jsonl \
-      --output-path data/sft_filtered.jsonl
-"""
 
 import argparse
 import json

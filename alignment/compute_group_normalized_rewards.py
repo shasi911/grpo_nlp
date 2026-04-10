@@ -9,21 +9,7 @@ def compute_group_normalized_rewards(
     advantage_eps,
     normalize_by_std,
 ):
-    """Compute per-rollout rewards and normalize within each group (GRPO).
 
-    Args:
-        reward_fn: Callable[[str, str], dict] — returns dict with "reward" key.
-        rollout_responses: list[str] of length rollout_batch_size.
-        repeated_ground_truths: list[str] of length rollout_batch_size.
-        group_size: int, number of rollouts per prompt.
-        advantage_eps: float, added to std to avoid division by zero.
-        normalize_by_std: bool, whether to divide by within-group std.
-
-    Returns:
-        normalized_rewards: torch.Tensor of shape (rollout_batch_size,)
-        raw_rewards: torch.Tensor of shape (rollout_batch_size,)
-        metadata: dict[str, float]
-    """
     # Compute scalar reward for each rollout
     raw = [
         reward_fn(resp, gt)["reward"]

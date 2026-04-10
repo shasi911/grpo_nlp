@@ -1,10 +1,4 @@
-"""
-Plot GRPO validation rewards and entropy from metrics.jsonl files.
 
-Usage:
-  python scripts/plot_grpo_results.py --output-dirs outputs/grpo_G4 outputs/grpo_G8
-  python scripts/plot_grpo_results.py   # auto-discovers outputs/grpo*
-"""
 
 import argparse
 import json

@@ -1,17 +1,3 @@
-"""
-Expert Iteration training script for Qwen/Qwen2.5-Math-1.5B on the MATH dataset.
-
-Algorithm per EI step:
-  1. Sample Db questions from train
-  2. Generate G rollouts per question with vLLM
-  3. Keep rollouts with correct answers
-  4. SFT on kept rollouts for sft_epochs epochs
-  5. Evaluate validation accuracy and log response entropy
-
-Usage examples:
-  python scripts/run_expert_iteration.py --db 1024 --rollouts 4 --sft-epochs 1
-  python scripts/run_expert_iteration.py --db 2048 --rollouts 8 --sft-epochs 3
-"""
 
 import argparse
 import json
