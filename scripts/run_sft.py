@@ -138,14 +138,13 @@ def train(args):
     torch.manual_seed(args.seed)
 
     # --- load data ---
-    train_data = load_sft_data(args.train_path)
-    val_data = load_sft_data(args.val_path)
-
     if args.filtered:
-        train_data = filter_correct_examples(train_data)
+        train_data = load_sft_data(args.filtered_path)
         run_name = f"sft_filtered_lr{args.lr}_bs{args.batch_size}"
     else:
+        train_data = load_sft_data(args.train_path)
         run_name = f"sft_n{args.num_examples}_lr{args.lr}_bs{args.batch_size}"
+    val_data = load_sft_data(args.val_path)
 
     # subsample if requested
     if args.num_examples != "full":
@@ -272,8 +271,10 @@ def train(args):
 def parse_args():
     p = argparse.ArgumentParser()
     # data
-    p.add_argument("--train-path",   default="data/sft.jsonl")
-    p.add_argument("--val-path",     default="data/MATH/validation.jsonl")
+    p.add_argument("--train-path",     default="data/sft.jsonl")
+    p.add_argument("--filtered-path", default="data/sft_filtered.jsonl",
+                   help="Pre-filtered dataset used when --filtered is set")
+    p.add_argument("--val-path",       default="data/MATH/validation.jsonl")
     p.add_argument("--prompt-path",  default="alignment/prompts/r1_zero.prompt")
     p.add_argument("--output-dir",   default="outputs/sft")
     # model
