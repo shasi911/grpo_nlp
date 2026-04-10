@@ -13,6 +13,8 @@ from alignment.get_response_log_probs import get_response_log_probs as _get_resp
 from alignment.masked_normalize import masked_normalize as _masked_normalize
 from alignment.sft_microbatch_train_step import sft_microbatch_train_step as _sft_microbatch_train_step
 from alignment.compute_group_normalized_rewards import compute_group_normalized_rewards as _compute_group_normalized_rewards
+from alignment.compute_naive_policy_gradient_loss import compute_naive_policy_gradient_loss as _compute_naive_policy_gradient_loss
+from alignment.compute_grpo_clip_loss import compute_grpo_clip_loss as _compute_grpo_clip_loss
 
 def run_tokenize_prompt_and_output(
     prompt_strs: list[str],
@@ -137,16 +139,16 @@ def run_compute_naive_policy_gradient_loss(
     """Compute policy gradient loss using either raw rewards or advantages.
 
     Args:
-        raw_rewards_or_advantages: torch.Tensor of shape (batch_size, 1): 
+        raw_rewards_or_advantages: torch.Tensor of shape (batch_size, 1):
             the raw rewards or advantages for each rollout response.
-        policy_log_probs: torch.Tensor of shape (batch_size, sequence_length): 
+        policy_log_probs: torch.Tensor of shape (batch_size, sequence_length):
             the log-probs of the policy.
 
     Returns:
-        torch.Tensor of shape (batch_size, sequence_length): 
+        torch.Tensor of shape (batch_size, sequence_length):
             the policy gradient per-token loss.
     """
-    raise NotImplementedError
+    return _compute_naive_policy_gradient_loss(raw_rewards_or_advantages, policy_log_probs)
 
 
 def run_compute_grpo_clip_loss(
@@ -155,25 +157,7 @@ def run_compute_grpo_clip_loss(
     old_log_probs: torch.Tensor,
     cliprange: float,
 ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
-    """Compute the GRPO-Clip loss.
-
-    Args:
-        advantages: torch.Tensor of shape (batch_size, 1): 
-            the advantages for each rollout response.
-        policy_log_probs: torch.Tensor of shape (batch_size, sequence_length): 
-            the log-probs of the policy.
-        old_log_probs: torch.Tensor of shape (batch_size, sequence_length): 
-            the log-probs of the old policy.
-        cliprange: float, the clip range for the ratio.
-
-    Returns:
-        tuple[torch.Tensor, dict[str, torch.Tensor]]:
-            torch.Tensor of shape (batch_size, sequence_length): 
-                the GRPO-Clip per-token loss.
-            dict[str, torch.Tensor]: metadata for the GRPO-Clip loss 
-                (used to compute clip fraction).
-    """
-    raise NotImplementedError
+    return _compute_grpo_clip_loss(advantages, policy_log_probs, old_log_probs, cliprange)
 
 
 def run_compute_policy_gradient_loss(
