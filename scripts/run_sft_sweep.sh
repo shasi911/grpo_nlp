@@ -17,6 +17,7 @@ for N in 128 256 512 1024 full; do
         --batch-size $BS \
         --num-epochs $EPOCHS \
         --device $DEVICE \
+        --use-sgd \
         --output-dir "outputs/sft_n${N}"
 done
 
@@ -29,4 +30,5 @@ python scripts/run_sft.py \
     --batch-size $BS \
     --num-epochs $EPOCHS \
     --device $DEVICE \
+    --use-sgd \
     --output-dir "outputs/sft_filtered"

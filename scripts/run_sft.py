@@ -129,7 +129,6 @@ def train(args):
     import os
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     import torch
-    import wandb
     from transformers import AutoModelForCausalLM, AutoTokenizer
     from vllm import LLM, SamplingParams
     from alignment.tokenizer_prompt_and_output import tokenize_prompt_and_output
@@ -162,13 +161,10 @@ def train(args):
 
     pairs = make_prompt_response_pairs(train_data, prompt_template)
 
-    # --- wandb ---
-    wandb.init(
-        project=args.wandb_project,
-        name=run_name,
-        config=vars(args),
-    )
-    wandb.config.update({"num_train_examples": len(train_data)})
+    # --- local metrics log ---
+    metrics_path = Path(args.output_dir) / "metrics.jsonl"
+    Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+    metrics_file = open(metrics_path, "w")
 
     # --- model + tokenizer ---
     logger.info("Loading model: %s", args.model_id)
@@ -221,7 +217,7 @@ def train(args):
                 gradient_accumulation_steps=gradient_accumulation_steps,
             )
 
-            wandb.log({"train/loss": loss.item(), "train/step": global_step})
+            metrics_file.write(json.dumps({"train_loss": loss.item(), "step": global_step}) + "\n")
 
             # optimizer step after accumulating gradients
             if (micro_step + 1) % gradient_accumulation_steps == 0:
@@ -249,7 +245,8 @@ def train(args):
             num_val_examples=args.num_val_examples,
         )
         logger.info("Epoch %d | val_accuracy = %.4f", epoch + 1, val_acc)
-        wandb.log({"val/accuracy": val_acc, "val/epoch": epoch + 1, "train/step": global_step})
+        metrics_file.write(json.dumps({"val_accuracy": val_acc, "epoch": epoch + 1, "step": global_step}) + "\n")
+        metrics_file.flush()
 
         # reload model for next epoch (vllm unloads it)
         model = AutoModelForCausalLM.from_pretrained(
@@ -264,8 +261,8 @@ def train(args):
         else:
             optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
-    wandb.finish()
-    logger.info("Training complete.")
+    metrics_file.close()
+    logger.info("Training complete. Metrics saved to %s", metrics_path)
 
 
 # --------------------------------------------------------------------------- #
@@ -302,8 +299,6 @@ def parse_args():
     p.add_argument("--seed",         type=int,   default=42)
     p.add_argument("--use-sgd",      action="store_true",
                    help="Use SGD instead of AdamW to reduce memory (no 2nd moment)")
-    # wandb
-    p.add_argument("--wandb-project", default="sft-math")
     return p.parse_args()
 
 
