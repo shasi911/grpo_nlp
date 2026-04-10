@@ -152,8 +152,16 @@ def train_on_rollouts(
         policy_log_probs = log_probs_all.gather(-1, labels.unsqueeze(-1)).squeeze(-1)
         del logits, log_probs_all
 
+        # Skip if no response tokens survived truncation
+        if response_mask.sum() == 0:
+            continue
+
         adv = advantages[i].unsqueeze(0).unsqueeze(0).to(device)   # (1,1)
         raw = raw_rewards[i].unsqueeze(0).unsqueeze(0).to(device)  # (1,1)
+
+        # Skip if advantage is NaN (happens when entire group reward is 0 and std=0)
+        if adv.isnan().any():
+            continue
 
         old_lp = None
         if old_log_probs_list is not None:
@@ -169,7 +177,8 @@ def train_on_rollouts(
             old_log_probs=old_lp,
             cliprange=args.cliprange,
         )
-        losses.append(loss.item())
+        if not loss.isnan():
+            losses.append(loss.item())
 
         if (i + 1) % gradient_accumulation_steps == 0 or i == n - 1:
             import torch.nn as nn
@@ -421,7 +430,7 @@ def parse_args():
     p.add_argument("--weight-decay", type=float, default=0.0)
     p.add_argument("--batch-size",   type=int,   default=16)
     p.add_argument("--micro-batch-size", type=int, default=1)
-    p.add_argument("--max-seq-len",  type=int,   default=256)
+    p.add_argument("--max-seq-len",  type=int,   default=512)
     p.add_argument("--max-grad-norm",type=float, default=1.0)
     p.add_argument("--max-new-tokens", type=int, default=512)
     p.add_argument("--gpu-memory-utilization", type=float, default=0.5)
