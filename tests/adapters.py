@@ -12,6 +12,7 @@ from alignment.compute_entropy import compute_entropy as _compute_entropy
 from alignment.get_response_log_probs import get_response_log_probs as _get_response_log_probs
 from alignment.masked_normalize import masked_normalize as _masked_normalize
 from alignment.sft_microbatch_train_step import sft_microbatch_train_step as _sft_microbatch_train_step
+from alignment.compute_group_normalized_rewards import compute_group_normalized_rewards as _compute_group_normalized_rewards
 
 def run_tokenize_prompt_and_output(
     prompt_strs: list[str],
@@ -82,7 +83,14 @@ def run_compute_group_normalized_rewards(
                 You may choose what you wish to log here
                 (some statistics of the rewards, etc.).
     """
-    raise NotImplementedError
+    return _compute_group_normalized_rewards(
+        reward_fn=reward_fn,
+        rollout_responses=rollout_responses,
+        repeated_ground_truths=repeated_ground_truths,
+        group_size=group_size,
+        advantage_eps=advantage_eps,
+        normalize_by_std=normalize_by_std,
+    )
 
 
 def run_compute_entropy(logits: torch.Tensor) -> torch.Tensor:
